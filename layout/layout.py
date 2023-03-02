@@ -115,16 +115,17 @@ card_gain = dbc.Card([
             dbc.Col(dcc.Loading(
                 dcc.Graph(
                     id='scatter',
-                    figure={'data': [{'mode': 'lines',
-                                      'type': 'scatter',
-                                      'x': [],
-                                      'y': []}],
-                            'layout': {'template': pio.templates['plotly'],
-                                       'height': 700,
-                                       'uirevision': 'no_change',
-                                       'xaxis': dict(title='Number of Channels'),
-                                       'yaxis': dict(title='Integration Gain (dB)')}
-                            },
+                    figure={
+                        'data': [{'mode': 'lines',
+                                  'type': 'scatter',
+                                  'x': [],
+                                  'y': []}],
+                        'layout': {'template': pio.templates['plotly'],
+                                   'height': 700,
+                                   'uirevision': 'no_change',
+                                   'xaxis': dict(title='Number of Channels'),
+                                   'yaxis': dict(title='Integration Gain (dB)')}
+                    },
                 )), width=9),])
     ]),
 ], className="shadow-sm",
