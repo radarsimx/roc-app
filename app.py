@@ -29,8 +29,6 @@
 
 
 import dash
-from dash import dcc
-from dash import html
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
@@ -39,7 +37,7 @@ import plotly.io as pio
 
 from dash.exceptions import PreventUpdate
 
-from roc.tools import roc_pd, roc_snr
+from roc.tools import roc_snr
 
 from layout.layout import get_app_layout
 
@@ -106,15 +104,16 @@ def gain_plot(pd, pfa, n, model, min_pd, max_pd, min_pfa, max_pfa):
              'name': mod}
         )
 
-    return dict(fig={'data': fig_data,
-                     'layout': {'template': pio.templates['plotly'],
-                                'height': 700,
-                                'uirevision': 'no_change',
-                                'title': 'Pd = '+str(pd)+', Pfa = '+str(pfa),
-                                'xaxis': dict(title='Number of Channels'),
-                                'yaxis': dict(title='Integration Gain (dB)')}
-                     },
-                minsnr_container=minsnr_container)
+    return dict(
+        fig={'data': fig_data,
+             'layout': {'template': pio.templates['plotly'],
+                        'height': 700,
+                        'uirevision': 'no_change',
+                        'title': 'Pd = '+str(pd)+', Pfa = '+str(pfa),
+                        'xaxis': dict(title='Number of Channels'),
+                        'yaxis': dict(title='Integration Gain (dB)')}
+             },
+        minsnr_container=minsnr_container)
 
 
 if __name__ == '__main__':
