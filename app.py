@@ -48,6 +48,9 @@ app = dash.Dash(__name__,
                 }]
                 )
 
+app.scripts.config.serve_locally = True
+app.css.config.serve_locally = True
+app.title = 'RadarTool'
 app.layout = get_app_layout
 
 
