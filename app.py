@@ -63,12 +63,12 @@ app.layout = get_app_layout
 )
 def gain_plot(pd, pfa, n, model):
     n_array = np.arange(1, n+1)
-    nci_gain = np.zeros((len(model),n), dtype=np.float64)
+    nci_gain = np.zeros((len(model), n), dtype=np.float64)
     fig_data = []
     for m_idx, mod in enumerate(model):
         for idx in range(1, n+1):
             nci_gain[m_idx, idx-1] = roc_snr(pfa, pd, 1, mod) - \
-                roc_snr(pfa, pd, int(n_array[idx-1]), mod)
+                roc_snr(pfa, pd, n_array[idx-1], mod)
         fig_data.append(
             {'mode': 'lines',
              'type': 'scatter',
@@ -80,7 +80,10 @@ def gain_plot(pd, pfa, n, model):
     return dict(fig={'data': fig_data,
                      'layout': {'template': pio.templates['plotly'],
                                 'height': 650,
-                                'uirevision': 'no_change'}
+                                'uirevision': 'no_change',
+                                'title': 'Pd = '+str(pd)+', Pfa = '+str(pfa),
+                                'xaxis': dict(title='Number of channels'),
+                                'yaxis': dict(title='Integration gain (dB)')}
                      })
 
 
