@@ -73,19 +73,14 @@ app.layout = get_app_layout
     )
 )
 def gain_plot(pd, pfa, n, model, min_pd, max_pd, min_pfa, max_pfa):
-
     if pd is None:
-        print('None pd')
         raise PreventUpdate
     elif pd < min_pd or pd > max_pd:
-        print('pd out of region')
         raise PreventUpdate
 
     if pfa is None:
-        print('None pfa')
         raise PreventUpdate
     elif pfa < min_pfa or pfa > max_pfa:
-        print('pfa out of region')
         raise PreventUpdate
 
     n_array = np.arange(1, n+1)
