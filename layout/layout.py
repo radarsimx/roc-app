@@ -66,7 +66,7 @@ card_gain = dbc.Card([
     dbc.CardBody([
         dbc.Row([
             dbc.Col(dbc.Row([
-                dbc.FormText("Pd"),
+                dbc.FormText("Pd, probability of detection"),
                 dbc.Col(dbc.Input(id='pd',
                                   type="number",
                                   value=0.5,
@@ -75,7 +75,7 @@ card_gain = dbc.Card([
                                   step=0.0001,
                                   className="mb-3")),
 
-                dbc.FormText("Pfa"),
+                dbc.FormText("Pfa, probability of false alarm"),
                 dbc.Col(dbc.Input(id='pfa',
                                   type="number",
                                   value=0.0001,
@@ -84,7 +84,7 @@ card_gain = dbc.Card([
                                   step=0.00000001,
                                   className="mb-3")),
 
-                dbc.FormText("N"),
+                dbc.FormText("N, number of channels"),
                 dcc.Slider(
                     id='channels',
                     min=1,
@@ -96,29 +96,36 @@ card_gain = dbc.Card([
                              'placement': 'bottom'}
                 ),
 
-                dbc.FormText("Type something in the box above"),
+                dbc.FormText("Types of targets", className="mt-3"),
                 dcc.Dropdown(
                     id='integration',
                     options=[{'label': i,
                               'value': i}
                              for i in INTEGRATION],
-                    value=['Swerling 4'],
+                    value=['Swerling 1', 'Swerling 3'],
                     multi=True
                 ),
 
+                dbc.Col(html.Hr()),
+                dbc.Label("Single Channel Minimal SNR"),
+
+                dbc.Row(id='minsnr-container', children=[]),
+
             ]), width=3),
-            dbc.Col(
+            dbc.Col(dcc.Loading(
                 dcc.Graph(
                     id='scatter',
                     figure={'data': [{'mode': 'lines',
                                       'type': 'scatter',
-                                      'x': [1, 2],
-                                      'y': [1, 2]}],
+                                      'x': [],
+                                      'y': []}],
                             'layout': {'template': pio.templates['plotly'],
-                                       'height': 650,
-                                       'uirevision': 'no_change'}
+                                       'height': 700,
+                                       'uirevision': 'no_change',
+                                       'xaxis': dict(title='Number of Channels'),
+                                       'yaxis': dict(title='Integration Gain (dB)')}
                             },
-                ), width=9),])
+                )), width=9),])
     ]),
 ], className="shadow-sm",
 )
@@ -133,6 +140,5 @@ def get_app_layout():
         html.Hr(),
 
         dcc.Markdown(
-            'Designed and developed by **Zhengyu Peng** \
-                | Powered by [Dash](https://plotly.com/dash/)'),
+            'v1.0 | Powered by [Dash](https://plotly.com/dash/)'),
     ], fluid=True, className="dbc_light")
