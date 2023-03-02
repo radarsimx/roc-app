@@ -102,7 +102,7 @@ card_gain = dbc.Card([
                     options=[{'label': i,
                               'value': i}
                              for i in INTEGRATION],
-                    value=INTEGRATION,
+                    value=['Swerling 4'],
                     multi=True
                 ),
 
