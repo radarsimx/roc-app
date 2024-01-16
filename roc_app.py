@@ -74,8 +74,8 @@ server = app.server
 )
 def gain_plot(pd, pfa, n, model, min_pd, max_pd, min_pfa, max_pfa):
     """
-    Generate a plot for integration gain based on probability of detection (Pd), probability of false alarm (Pfa),
-    number of channels (n), and a list of models.
+    Generate a plot for integration gain based on probability of detection (Pd),
+    probability of false alarm (Pfa), number of channels (n), and a list of models.
 
     Parameters:
     - pd (float): Probability of detection.
