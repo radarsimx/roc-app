@@ -176,6 +176,7 @@
  }
 
 .dbc_light .nav-link {
+    background-color: white;
     border-width: 0.5px !important;
     border-color: rgba(100, 100, 100, 0.4) !important;
     color: var(--bs-primary) !important;

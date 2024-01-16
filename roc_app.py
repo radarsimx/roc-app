@@ -30,14 +30,15 @@
 
 import dash
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 import numpy as np
 import plotly.io as pio
 
-from dash.exceptions import PreventUpdate
-
 from roc.tools import roc_snr
+
+from flaskwebgui import FlaskUI
 
 from layout.layout import get_app_layout
 
@@ -50,8 +51,9 @@ app = dash.Dash(__name__,
 
 app.scripts.config.serve_locally = True
 app.css.config.serve_locally = True
-app.title = 'RadarTool'
+app.title = 'ROC'
 app.layout = get_app_layout
+server = app.server
 
 
 @app.callback(
@@ -115,4 +117,5 @@ def gain_plot(pd, pfa, n, model, min_pd, max_pd, min_pfa, max_pfa):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, threaded=True, processes=1, host='0.0.0.0')
+    # app.run_server(debug=True, threaded=True, processes=1, host='0.0.0.0')
+    FlaskUI(app=server, server="flask").run()
