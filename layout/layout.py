@@ -148,12 +148,12 @@ card_gain = dbc.Card(
                                         ],
                                         "layout": {
                                             "template": pio.templates["plotly"],
-                                            "height": 700,
                                             "uirevision": "no_change",
                                             "xaxis": {"title": "Number of Channels"},
                                             "yaxis": {"title": "Integration Gain (dB)"},
                                         },
                                     },
+                                    style={"height": "90vh"},
                                 ),
                                 color="primary",
                                 type="grow",
@@ -183,7 +183,7 @@ def get_app_layout():
     return dbc.Container(
         [
             dcc.Store(id="session-id", data=str(uuid.uuid4())),
-            dbc.Row([dbc.Col(card_gain)], className="my-3"),
+            dbc.Row([dbc.Col(card_gain)], className="my-2"),
             html.Hr(),
             dcc.Markdown("v1.0 | Powered by [Dash](https://plotly.com/dash/)"),
         ],

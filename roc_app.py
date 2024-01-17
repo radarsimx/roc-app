@@ -132,7 +132,6 @@ def gain_plot(pd, pfa, n, model, min_pd, max_pd, min_pfa, max_pfa):
             "data": fig_data,
             "layout": {
                 "template": pio.templates["plotly"],
-                "height": 700,
                 "uirevision": "no_change",
                 "title": "Pd = " + str(pd) + ", Pfa = " + str(pfa),
                 "xaxis": {"title": "Number of Channels"},
