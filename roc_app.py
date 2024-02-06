@@ -150,5 +150,5 @@ if __name__ == "__main__":
     # app.run_server(debug=True, threaded=True, processes=1, host='0.0.0.0')
     # FlaskUI(app=server, server="flask", port=61134).run()
 
-    run_thread = Thread(target=run_gui_thread, name="run new gui")
+    run_thread = Thread(target=run_gui_thread, name="roc app")
     run_thread.start()
