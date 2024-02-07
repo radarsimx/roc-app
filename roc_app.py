@@ -27,7 +27,6 @@
 
 """
 
-from threading import Thread
 import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
@@ -142,13 +141,6 @@ def gain_plot(pd, pfa, n, model, min_pd, max_pd, min_pfa, max_pfa):
     }
 
 
-def run_gui_thread():
-    FlaskUI(app=server, server="flask", port=61134).run()
-
-
 if __name__ == "__main__":
     # app.run_server(debug=True, threaded=True, processes=1, host='0.0.0.0')
-    # FlaskUI(app=server, server="flask", port=61134).run()
-
-    run_thread = Thread(target=run_gui_thread, name="roc app")
-    run_thread.start()
+    FlaskUI(app=server, server="flask", port=61134, profile_dir="roc_app").run()
