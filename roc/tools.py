@@ -36,6 +36,7 @@ from scipy.special import (
     erfc,
     erfcinv,
     gammainc,
+    gammaincinv,
     iv,
 )  # pylint: disable=no-name-in-module
 from scipy.stats import distributions
@@ -96,24 +97,7 @@ def threshold(pfa, npulses):
     Chapman and Hall/CRC, 2005.
     """
 
-    eps = 0.00000001
-    delta = 10000.0
-    nfa = npulses * np.log(2) / pfa
-    sqrtpfa = np.sqrt(-np.log10(pfa))
-    sqrtnp = np.sqrt(npulses)
-    thred0 = npulses - sqrtnp + 2.3 * sqrtpfa * (sqrtpfa + sqrtnp - 1.0)
-    thred = thred0
-    while delta >= thred0:
-        igf = gammainc(npulses, thred0)
-        deno = np.exp(
-            (npulses - 1) * np.log(thred0 + eps) - thred0 - log_factorial(npulses - 1)
-        )
-        thred = thred0 + ((0.5 ** (npulses / nfa) - igf) / (deno + eps))
-
-        delta = np.abs(thred - thred0) * 10000.0
-        thred0 = thred
-
-    return thred
+    return gammaincinv(npulses, 1 - pfa)
 
 
 def pd_swerling0(npulses, snr, thred):
@@ -143,6 +127,71 @@ def pd_swerling1(npulses, snr, thred):
 
 def pd_swerling2(npulses, snr, thred):
     return 1 - gammainc(npulses, (thred / (1 + snr)))
+
+
+def pd_swerling3(npulses, snr, thred):
+
+    temp_1 = thred / (1 + 0.5 * npulses * snr)
+    ko = (
+        np.exp(-temp_1)
+        * (1 + 2 / (npulses * snr)) ** (npulses - 2)
+        * (1 + temp_1 - 2 * (npulses - 2) / (npulses * snr))
+    )
+    if npulses <= 2:
+        return ko
+    else:
+        c_var = 1 / (1 + 0.5 * npulses * snr)
+        sum_array = np.arange(0, npulses - 1)
+
+        var_1 = (
+            thred ** (npulses - 1)
+            * np.exp(-thred)
+            * c_var
+            / np.exp(log_factorial(npulses - 2))
+        )
+
+        var_2 = np.sum(
+            np.exp(-thred) * thred**sum_array / np.exp(log_factorial(sum_array))
+        )
+
+        var_3_1 = np.exp(-c_var * thred) / ((1 - c_var) ** (npulses - 2))
+        var_3_2 = 1 - (npulses - 2) * c_var / (1 - c_var) + c_var * thred
+        var_3_3 = 1 - np.sum(
+            np.exp(-(1 - c_var) * thred)
+            * (thred**sum_array)
+            * ((1 - c_var) ** sum_array)
+            / np.exp(log_factorial(sum_array))
+        )
+
+        return var_1 + var_2 + var_3_1 * var_3_2 * var_3_3
+
+    #     warnings.filterwarnings("ignore", category=RuntimeWarning)
+    #     temp4 = (
+    #         thred ** (npulses - 1)
+    #         * np.exp(-thred)
+    #         / (temp_1 * np.exp(log_factorial(npulses - 2.0)))
+    #     )
+    #     warnings.filterwarnings("default", category=RuntimeWarning)
+
+    #     if np.isscalar(temp4):
+    #         if np.isnan(temp4) or np.isinf(temp4):
+    #             temp4 = 0
+    #     else:
+    #         temp4[np.isnan(temp4)] = 0
+    #         temp4[np.isinf(temp4)] = 0
+
+    #     pd[it_pfa.index, :] = (
+    #         temp4
+    #         + 1
+    #         - gammainc(npulses - 1, thred)
+    #         + ko * gammainc(npulses - 1, thred / (1 + 2 / (npulses * snr)))
+    #     )
+    # if np.size(pd[it_pfa.index, :]) == 1:
+    #     if pd[it_pfa.index, :] > 1:
+    #         pd[it_pfa.index, :] = 1
+    # else:
+    #     neg_idx = np.where(pd[it_pfa.index, :] > 1)
+    #     pd[it_pfa.index, :][neg_idx[0]] = 1
 
 
 def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
@@ -200,42 +249,8 @@ def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
             pd[it_pfa.index, :] = pd_swerling2(npulses, snr, thred)
 
         elif stype == "Swerling 3":
-            temp_1 = thred / (1 + 0.5 * npulses * snr)
-            ko = (
-                np.exp(-temp_1)
-                * (1 + 2 / (npulses * snr)) ** (npulses - 2)
-                * (1 + temp_1 - 2 * (npulses - 2) / (npulses * snr))
-            )
-            if npulses <= 2:
-                pd[it_pfa.index, :] = ko
-            else:
-                warnings.filterwarnings("ignore", category=RuntimeWarning)
-                temp4 = (
-                    thred ** (npulses - 1)
-                    * np.exp(-thred)
-                    / (temp_1 * np.exp(log_factorial(npulses - 2.0)))
-                )
-                warnings.filterwarnings("default", category=RuntimeWarning)
+            pd[it_pfa.index, :] = pd_swerling3(npulses, snr, thred)
 
-                if np.isscalar(temp4):
-                    if np.isnan(temp4) or np.isinf(temp4):
-                        temp4 = 0
-                else:
-                    temp4[np.isnan(temp4)] = 0
-                    temp4[np.isinf(temp4)] = 0
-
-                pd[it_pfa.index, :] = (
-                    temp4
-                    + 1
-                    - gammainc(npulses - 1, thred)
-                    + ko * gammainc(npulses - 1, thred / (1 + 2 / (npulses * snr)))
-                )
-            if np.size(pd[it_pfa.index, :]) == 1:
-                if pd[it_pfa.index, :] > 1:
-                    pd[it_pfa.index, :] = 1
-            else:
-                neg_idx = np.where(pd[it_pfa.index, :] > 1)
-                pd[it_pfa.index, :][neg_idx[0]] = 1
         elif stype == "Swerling 4":
             beta = 1 + snr / 2
             if npulses >= 50:
