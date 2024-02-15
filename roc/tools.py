@@ -116,6 +116,35 @@ def threshold(pfa, npulses):
     return thred
 
 
+def pd_swerling0(npulses, snr, thred):
+    sum_array = np.arange(2, npulses + 1)
+
+    return marcumq(np.sqrt(2 * npulses * snr), np.sqrt(2 * thred)) + np.exp(
+        -(thred + npulses * snr)
+    ) * np.sum(
+        (thred / (npulses * snr)) ** ((sum_array - 1) / 2)
+        * iv(sum_array - 1, 2 * np.sqrt(npulses * snr * thred))
+    )
+
+
+def pd_swerling1(npulses, snr, thred):
+    if npulses == 1:
+        return np.exp(-thred / (1 + snr))
+    else:
+        temp_sw1 = 1 + 1 / (npulses * snr)
+        igf1 = gammainc(npulses - 1, thred)
+        igf2 = gammainc(npulses - 1, thred / temp_sw1)
+        return (
+            1
+            - igf1
+            + (temp_sw1 ** (npulses - 1)) * igf2 * np.exp(-thred / (1 + npulses * snr))
+        )
+
+
+def pd_swerling2(npulses, snr, thred):
+    return 1 - gammainc(npulses, (thred / (1 + snr)))
+
+
 def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
     """
     Calculate probability of detection (Pd) in receiver operating
@@ -165,32 +194,11 @@ def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
         thred = threshold(it_pfa[0], npulses)
 
         if stype == "Swerling 1":
-            if npulses == 1:
-                pd[it_pfa.index, :] = np.exp(-thred / (1 + snr))
-            else:
-                temp_sw1 = 1 + 1 / (npulses * snr)
-                igf1 = gammainc(npulses - 1, thred)
-                igf2 = gammainc(npulses - 1, thred / temp_sw1)
-                pd[it_pfa.index, :] = (
-                    1
-                    - igf1
-                    + (temp_sw1 ** (npulses - 1))
-                    * igf2
-                    * np.exp(-thred / (1 + npulses * snr))
-                )
+            pd[it_pfa.index, :] = pd_swerling1(npulses, snr, thred)
+
         elif stype == "Swerling 2":
-            if npulses <= 50:
-                pd[it_pfa.index, :] = 1 - gammainc(npulses, (thred / (1 + snr)))
-            else:
-                v_var = (thred - npulses * (snr + 1)) / (np.sqrt(npulses) * (snr + 1))
-                v_sqr = v_var**2
-                val1 = np.exp(-v_sqr / 2) / np.sqrt(2 * np.pi)
-                val2 = (
-                    -1 / np.sqrt(9 * npulses) * (v_sqr - 1)
-                    + 0.25 * v_var * (3 - v_sqr) / npulses
-                    - v_var * (v_var**4 - 10 * v_sqr + 15) / (18 * npulses)
-                )
-                pd[it_pfa.index, :] = 0.5 * erfc(v_var / np.sqrt(2)) - val1 * val2
+            pd[it_pfa.index, :] = pd_swerling2(npulses, snr, thred)
+
         elif stype == "Swerling 3":
             temp_1 = thred / (1 + 0.5 * npulses * snr)
             ko = (
@@ -274,14 +282,8 @@ def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
                 neg_idx = np.where(pd[it_pfa.index, :] < 0)
                 pd[it_pfa.index, :][neg_idx[0]] = 0
         elif stype == "Swerling 5" or stype == "Swerling 0":
-            sum_array = np.arange(2, npulses + 1)
+            pd[it_pfa.index, :] = pd_swerling0(npulses, snr, thred)
 
-            pd[it_pfa.index, :] = marcumq(
-                np.sqrt(2 * npulses * snr), np.sqrt(2 * thred)
-            ) + np.exp(-(thred + npulses * snr)) * np.sum(
-                (thred / (npulses * snr)) ** ((sum_array - 1) / 2)
-                * iv(sum_array - 1, 2 * np.sqrt(npulses * snr * thred))
-            )
         elif stype == "Coherent":
             snr = snr * npulses
             pd[it_pfa.index, :] = erfc(erfcinv(2 * it_pfa[0]) - np.sqrt(snr)) / 2
