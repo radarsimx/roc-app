@@ -88,7 +88,7 @@ def pdpfa_plot(n, snr, model):
     - minsnr_container (list): List of FormText containing minimum SNR information for each model.
     """
 
-    pfa = np.linspace(0, 1, 1000)
+    pfa = np.logspace(-10, 0, 1000)
     pfa = pfa[1:]
     pd = roc_pd(pfa, snr, n, model)
 
@@ -105,7 +105,7 @@ def pdpfa_plot(n, snr, model):
         {
             "mode": "lines",
             "type": "scatter",
-            "x": pfa,
+            "x": np.log10(pfa),
             "y": pd,
             "name": model,
         }

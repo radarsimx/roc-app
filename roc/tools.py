@@ -30,10 +30,19 @@ functions:
 
 """
 
-
 import warnings
 import numpy as np
-from scipy.special import erfc, erfcinv, gammainc  # pylint: disable=no-name-in-module
+from scipy.special import (
+    erfc,
+    erfcinv,
+    gammainc,
+    iv,
+)  # pylint: disable=no-name-in-module
+from scipy.stats import distributions
+
+
+def marcumq(a, x, m=1):
+    return 1 - distributions.ncx2.cdf(df=m * 2, nc=a**2, x=x**2)
 
 
 def log_factorial(n):
@@ -265,21 +274,14 @@ def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
                 neg_idx = np.where(pd[it_pfa.index, :] < 0)
                 pd[it_pfa.index, :][neg_idx[0]] = 0
         elif stype == "Swerling 5" or stype == "Swerling 0":
-            temp_1 = 2 * snr + 1
-            omegabar = np.sqrt(npulses * temp_1)
-            c3 = -(snr + 1 / 3) / (np.sqrt(npulses) * temp_1**1.5)
-            c4 = (snr + 0.25) / (npulses * temp_1**2.0)
-            c6 = c3 * c3 / 2
-            v_var = (thred - npulses * (1 + snr)) / omegabar
-            v_sqr = v_var**2
-            val1 = np.exp(-v_sqr / 2) / np.sqrt(2 * np.pi)
-            val2 = (
-                c3 * (v_sqr - 1)
-                + c4 * v_var * (3 - v_sqr)
-                - c6 * v_var * (v_var**4 - 10 * v_sqr + 15)
+            sum_array = np.arange(2, npulses + 1)
+
+            pd[it_pfa.index, :] = marcumq(
+                np.sqrt(2 * npulses * snr), np.sqrt(2 * thred)
+            ) + np.exp(-(thred + npulses * snr)) * np.sum(
+                (thred / (npulses * snr)) ** ((sum_array - 1) / 2)
+                * iv(sum_array - 1, 2 * np.sqrt(npulses * snr * thred))
             )
-            q = 0.5 * erfc(v_var / np.sqrt(2))
-            pd[it_pfa.index, :] = q - val1 * val2
         elif stype == "Coherent":
             snr = snr * npulses
             pd[it_pfa.index, :] = erfc(erfcinv(2 * it_pfa[0]) - np.sqrt(snr)) / 2
