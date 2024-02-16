@@ -165,28 +165,41 @@ def pd_swerling3(npulses, snr, thred):
     if npulses <= 2:
         return ko
 
-    c_var = 1 / (1 + 0.5 * npulses * snr)
-    sum_array = np.arange(0, npulses - 1)
+    # c_var = 1 / (1 + 0.5 * npulses * snr)
+    # sum_array = np.arange(0, npulses - 1)
+
+    # var_1 = (
+    #     thred ** (npulses - 1)
+    #     * np.exp(-thred)
+    #     * c_var
+    #     / np.exp(log_factorial(npulses - 2))
+    # )
+
+    # var_2 = np.sum(np.exp(-thred) * thred**sum_array / np.exp(log_factorial(sum_array)))
+
+    # var_3_1 = np.exp(-c_var * thred) / ((1 - c_var) ** (npulses - 2))
+    # var_3_2 = 1 - (npulses - 2) * c_var / (1 - c_var) + c_var * thred
+    # var_3_3 = 1 - np.sum(
+    #     np.exp(-(1 - c_var) * thred)
+    #     * (thred**sum_array)
+    #     * ((1 - c_var) ** sum_array)
+    #     / np.exp(log_factorial(sum_array))
+    # )
+
+    # pd = var_1 + var_2 + var_3_1 * var_3_2 * var_3_3
 
     var_1 = (
         thred ** (npulses - 1)
         * np.exp(-thred)
-        * c_var
-        / np.exp(log_factorial(npulses - 2))
+        / ((1 + 0.5 * npulses * snr) * np.exp(log_factorial(npulses - 2.0)))
     )
 
-    var_2 = np.sum(np.exp(-thred) * thred**sum_array / np.exp(log_factorial(sum_array)))
-
-    var_3_1 = np.exp(-c_var * thred) / ((1 - c_var) ** (npulses - 2))
-    var_3_2 = 1 - (npulses - 2) * c_var / (1 - c_var) + c_var * thred
-    var_3_3 = 1 - np.sum(
-        np.exp(-(1 - c_var) * thred)
-        * (thred**sum_array)
-        * ((1 - c_var) ** sum_array)
-        / np.exp(log_factorial(sum_array))
+    pd = (
+        var_1
+        + 1
+        - gammainc(npulses - 1, thred)
+        + ko * gammainc(npulses - 1, thred / (1 + 2 / (npulses * snr)))
     )
-
-    pd = var_1 + var_2 + var_3_1 * var_3_2 * var_3_3
 
     return pd
 
