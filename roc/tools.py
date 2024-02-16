@@ -198,41 +198,44 @@ def pd_swerling3(npulses, snr, thred):
 
 
 def pd_swerling4(npulses, snr, thred):
-    c_var = 1 / (1 + 0.5 * snr)
-    if thred >= npulses * (2 - c_var):
-        pd = 0
-        for k_idx in range(0, npulses + 1):
-            l_array = np.arange(0, 2 * npulses - k_idx)
-            pd += (
-                np.exp(log_factorial(npulses))
-                / np.exp(log_factorial(k_idx))
-                / np.exp(log_factorial(npulses - k_idx))
-                * (((1 - c_var) / c_var) ** (npulses - k_idx))
-                * np.sum(
-                    np.exp(-c_var * thred)
-                    * ((c_var * thred) ** l_array)
-                    / np.exp(log_factorial(l_array))
-                )
-            )
-        return pd * (c_var**npulses)
+    beta = 1 + snr / 2
+    if npulses >= 100:
+        omegabar = np.sqrt(npulses * (2 * beta**2 - 1))
+        c3 = (2 * beta**3 - 1) / (3 * (2 * beta**2 - 1) * omegabar)
+        c4 = (2 * beta**4 - 1) / (4 * npulses * (2 * beta**2 - 1) ** 2)
+        c6 = c3**2 / 2
+        v_var = (thred - npulses * (1 + snr)) / omegabar
+        v_sqr = v_var**2
+        val1 = np.exp(-v_sqr / 2) / np.sqrt(2 * np.pi)
+        val2 = (
+            c3 * (v_sqr - 1)
+            + c4 * v_var * (3 - v_sqr)
+            - c6 * v_var * (v_var**4 - 10 * v_sqr + 15)
+        )
+        return 0.5 * erfc(v_var / np.sqrt(2)) - val1 * val2
     else:
-        pd = 0
-        factor_overflow_val = 160
-        for k_idx in range(0, npulses + 1):
-            if (2 * npulses - k_idx) <= factor_overflow_val:
-                l_array = np.arange((2 * npulses - k_idx), factor_overflow_val + 1)
-                pd += (
-                    np.exp(log_factorial(npulses))
-                    / np.exp(log_factorial(k_idx))
-                    / np.exp(log_factorial(npulses - k_idx))
-                    * (((1 - c_var) / c_var) ** (npulses - k_idx))
-                    * np.sum(
-                        np.exp(-c_var * thred)
-                        * ((c_var * thred) ** l_array)
-                        / np.exp(log_factorial(l_array))
-                    )
-                )
-        return 1 - pd * (c_var**npulses)
+        gamma0 = gammainc(npulses, thred / beta)
+        a1 = (thred / beta) ** npulses / (
+            np.exp(log_factorial(npulses)) * np.exp(thred / beta)
+        )
+        sum_var = gamma0
+        for i in range(1, npulses + 1, 1):
+            temp_sw4 = 1
+            if i == 1:
+                ai = a1
+            else:
+                ai = (thred / beta) * a1 / (npulses + i - 1)
+            a1 = ai
+            gammai = gamma0 - ai
+            gamma0 = gammai
+            a1 = ai
+
+            for ii in range(1, i + 1, 1):
+                temp_sw4 = temp_sw4 * int(npulses + 1 - ii)
+
+            term = (snr / 2) ** i * gammai * temp_sw4 / np.exp(log_factorial(i))
+            sum_var = sum_var + term
+        return 1 - sum_var / beta**npulses
 
 
 def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
