@@ -32,17 +32,35 @@ functions:
 
 import warnings
 import numpy as np
-from scipy.special import (
+from scipy.special import (  # pylint: disable=no-name-in-module
     erfc,
     erfcinv,
     gammainc,
     gammaincinv,
     iv,
-)  # pylint: disable=no-name-in-module
+)
 from scipy.stats import distributions
 
 
 def marcumq(a, x, m=1):
+    """
+    Calculates the generalized Marcum Q function.
+
+    The Marcum Q function is defined as:
+        Q_m(a, x) = 1 - F_ncx2(m * 2, a^2, x^2)
+
+    :param float a: Non-centrality parameter.
+    :param float x: Threshold value.
+    :param int m: Order of the function, positive integer (default is 1).
+
+    :return: Generalized Marcum Q function value.
+    :rtype: float
+
+    :references:
+        - `Wikipedia - Marcum Q-function <https://en.wikipedia.org/wiki/Marcum_Q-function>`_
+        - `SciPy Documentation - scipy.stats.ncx2
+            <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ncx2.html>`_
+    """
     return 1 - distributions.ncx2.cdf(df=m * 2, nc=a**2, x=x**2)
 
 
@@ -58,24 +76,33 @@ def log_factorial(n):
     :rtype: float
     """
 
-    n = n + 9.0
-    n2 = n**2
-    return (
-        (n - 1) * np.log(n)
-        - n
-        + np.log(np.sqrt(2 * np.pi * n))
-        + ((1 - (1 / 30 + (1 / 105) / n2) / n2) / 12) / n
-        - np.log(
-            (n - 1)
-            * (n - 2)
-            * (n - 3)
-            * (n - 4)
-            * (n - 5)
-            * (n - 6)
-            * (n - 7)
-            * (n - 8)
-        )
-    )
+    if np.isscalar(n):
+        return np.sum(np.log(np.arange(1, n + 1)))
+
+    val = np.zeros_like(n, dtype=float)
+    for idx, n_item in enumerate(n):
+        val[idx] = np.sum(np.log(np.arange(1, n_item + 1)))
+
+    return val
+
+    # n = n + 9.0
+    # n2 = n**2
+    # return (
+    #     (n - 1) * np.log(n)
+    #     - n
+    #     + np.log(np.sqrt(2 * np.pi * n))
+    #     + ((1 - (1 / 30 + (1 / 105) / n2) / n2) / 12) / n
+    #     - np.log(
+    #         (n - 1)
+    #         * (n - 2)
+    #         * (n - 3)
+    #         * (n - 4)
+    #         * (n - 5)
+    #         * (n - 6)
+    #         * (n - 7)
+    #         * (n - 8)
+    #     )
+    # )
 
 
 def threshold(pfa, npulses):
@@ -91,10 +118,9 @@ def threshold(pfa, npulses):
         Threshod ratio
     :rtype: float
 
-    *Reference*
-
-    Mahafza, Bassem R. Radar systems analysis and design using MATLAB.
-    Chapman and Hall/CRC, 2005.
+    :references:
+        - Mahafza, Bassem R. Radar systems analysis and design using MATLAB.
+            Chapman and Hall/CRC, 2005.
     """
 
     return gammaincinv(npulses, 1 - pfa)
@@ -130,7 +156,6 @@ def pd_swerling2(npulses, snr, thred):
 
 
 def pd_swerling3(npulses, snr, thred):
-
     temp_1 = thred / (1 + 0.5 * npulses * snr)
     ko = (
         np.exp(-temp_1)
@@ -139,31 +164,31 @@ def pd_swerling3(npulses, snr, thred):
     )
     if npulses <= 2:
         return ko
-    else:
-        c_var = 1 / (1 + 0.5 * npulses * snr)
-        sum_array = np.arange(0, npulses - 1)
 
-        var_1 = (
-            thred ** (npulses - 1)
-            * np.exp(-thred)
-            * c_var
-            / np.exp(log_factorial(npulses - 2))
-        )
+    c_var = 1 / (1 + 0.5 * npulses * snr)
+    sum_array = np.arange(0, npulses - 1)
 
-        var_2 = np.sum(
-            np.exp(-thred) * thred**sum_array / np.exp(log_factorial(sum_array))
-        )
+    var_1 = (
+        thred ** (npulses - 1)
+        * np.exp(-thred)
+        * c_var
+        / np.exp(log_factorial(npulses - 2))
+    )
 
-        var_3_1 = np.exp(-c_var * thred) / ((1 - c_var) ** (npulses - 2))
-        var_3_2 = 1 - (npulses - 2) * c_var / (1 - c_var) + c_var * thred
-        var_3_3 = 1 - np.sum(
-            np.exp(-(1 - c_var) * thred)
-            * (thred**sum_array)
-            * ((1 - c_var) ** sum_array)
-            / np.exp(log_factorial(sum_array))
-        )
+    var_2 = np.sum(np.exp(-thred) * thred**sum_array / np.exp(log_factorial(sum_array)))
 
-        return var_1 + var_2 + var_3_1 * var_3_2 * var_3_3
+    var_3_1 = np.exp(-c_var * thred) / ((1 - c_var) ** (npulses - 2))
+    var_3_2 = 1 - (npulses - 2) * c_var / (1 - c_var) + c_var * thred
+    var_3_3 = 1 - np.sum(
+        np.exp(-(1 - c_var) * thred)
+        * (thred**sum_array)
+        * ((1 - c_var) ** sum_array)
+        / np.exp(log_factorial(sum_array))
+    )
+
+    pd = var_1 + var_2 + var_3_1 * var_3_2 * var_3_3
+
+    return pd
 
     #     warnings.filterwarnings("ignore", category=RuntimeWarning)
     #     temp4 = (
@@ -192,6 +217,44 @@ def pd_swerling3(npulses, snr, thred):
     # else:
     #     neg_idx = np.where(pd[it_pfa.index, :] > 1)
     #     pd[it_pfa.index, :][neg_idx[0]] = 1
+
+
+def pd_swerling4(npulses, snr, thred):
+    c_var = 1 / (1 + 0.5 * snr)
+    if thred >= npulses * (2 - c_var):
+        pd = 0
+        for k_idx in range(0, npulses + 1):
+            l_array = np.arange(0, 2 * npulses - k_idx)
+            pd += (
+                np.exp(log_factorial(npulses))
+                / np.exp(log_factorial(k_idx))
+                / np.exp(log_factorial(npulses - k_idx))
+                * (((1 - c_var) / c_var) ** (npulses - k_idx))
+                * np.sum(
+                    np.exp(-c_var * thred)
+                    * ((c_var * thred) ** l_array)
+                    / np.exp(log_factorial(l_array))
+                )
+            )
+        return pd * (c_var**npulses)
+    else:
+        pd = 0
+        factor_overflow_val = 160
+        for k_idx in range(0, npulses + 1):
+            if (2 * npulses - k_idx) <= factor_overflow_val:
+                l_array = np.arange((2 * npulses - k_idx), factor_overflow_val + 1)
+                pd += (
+                    np.exp(log_factorial(npulses))
+                    / np.exp(log_factorial(k_idx))
+                    / np.exp(log_factorial(npulses - k_idx))
+                    * (((1 - c_var) / c_var) ** (npulses - k_idx))
+                    * np.sum(
+                        np.exp(-c_var * thred)
+                        * ((c_var * thred) ** l_array)
+                        / np.exp(log_factorial(l_array))
+                    )
+                )
+        return 1 - pd * (c_var**npulses)
 
 
 def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
@@ -252,59 +315,19 @@ def roc_pd(pfa, snr, npulses=1, stype="Coherent"):
             pd[it_pfa.index, :] = pd_swerling3(npulses, snr, thred)
 
         elif stype == "Swerling 4":
-            beta = 1 + snr / 2
-            if npulses >= 50:
-                omegabar = np.sqrt(npulses * (2 * beta**2 - 1))
-                c3 = (2 * beta**3 - 1) / (3 * (2 * beta**2 - 1) * omegabar)
-                c4 = (2 * beta**4 - 1) / (4 * npulses * (2 * beta**2 - 1) ** 2)
-                c6 = c3**2 / 2
-                v_var = (thred - npulses * (1 + snr)) / omegabar
-                v_sqr = v_var**2
-                val1 = np.exp(-v_sqr / 2) / np.sqrt(2 * np.pi)
-                val2 = (
-                    c3 * (v_sqr - 1)
-                    + c4 * v_var * (3 - v_sqr)
-                    - c6 * v_var * (v_var**4 - 10 * v_sqr + 15)
-                )
-                pd[it_pfa.index, :] = 0.5 * erfc(v_var / np.sqrt(2)) - val1 * val2
-            else:
-                gamma0 = gammainc(npulses, thred / beta)
-                a1 = (thred / beta) ** npulses / (
-                    np.exp(log_factorial(npulses)) * np.exp(thred / beta)
-                )
-                sum_var = gamma0
-                for i in range(1, npulses + 1, 1):
-                    temp_sw4 = 1
-                    if i == 1:
-                        ai = a1
-                    else:
-                        ai = (thred / beta) * a1 / (npulses + i - 1)
-                    a1 = ai
-                    gammai = gamma0 - ai
-                    gamma0 = gammai
-                    a1 = ai
+            pd[it_pfa.index, :] = pd_swerling4(npulses, snr, thred)
 
-                    for ii in range(1, i + 1, 1):
-                        temp_sw4 = temp_sw4 * int(npulses + 1 - ii)
-
-                    term = (snr / 2) ** i * gammai * temp_sw4 / np.exp(log_factorial(i))
-                    sum_var = sum_var + term
-                pd[it_pfa.index, :] = 1 - sum_var / beta**npulses
-            if np.size(pd[it_pfa.index, :]) == 1:
-                if pd[it_pfa.index, :] < 0:
-                    pd[it_pfa.index, :] = 0
-            else:
-                neg_idx = np.where(pd[it_pfa.index, :] < 0)
-                pd[it_pfa.index, :][neg_idx[0]] = 0
-        elif stype == "Swerling 5" or stype == "Swerling 0":
+        elif stype in ("Swerling 5", "Swerling 0"):
             pd[it_pfa.index, :] = pd_swerling0(npulses, snr, thred)
 
         elif stype == "Coherent":
             snr = snr * npulses
             pd[it_pfa.index, :] = erfc(erfcinv(2 * it_pfa[0]) - np.sqrt(snr)) / 2
+
         elif stype == "Real":
             snr = snr * npulses / 2
             pd[it_pfa.index, :] = erfc(erfcinv(2 * it_pfa[0]) - np.sqrt(snr)) / 2
+
         else:
             return None
 
