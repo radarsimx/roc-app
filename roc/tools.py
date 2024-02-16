@@ -127,14 +127,32 @@ def threshold(pfa, npulses):
 
 
 def pd_swerling0(npulses, snr, thred):
-    sum_array = np.arange(2, npulses + 1)
+    if npulses <= 50:
+        sum_array = np.arange(2, npulses + 1)
 
-    return marcumq(np.sqrt(2 * npulses * snr), np.sqrt(2 * thred)) + np.exp(
-        -(thred + npulses * snr)
-    ) * np.sum(
-        (thred / (npulses * snr)) ** ((sum_array - 1) / 2)
-        * iv(sum_array - 1, 2 * np.sqrt(npulses * snr * thred))
-    )
+        return marcumq(np.sqrt(2 * npulses * snr), np.sqrt(2 * thred)) + np.exp(
+            -(thred + npulses * snr)
+        ) * np.sum(
+            (thred / (npulses * snr)) ** ((sum_array - 1) / 2)
+            * iv(sum_array - 1, 2 * np.sqrt(npulses * snr * thred))
+        )
+
+    else:
+        temp_1 = 2 * snr + 1
+        omegabar = np.sqrt(npulses * temp_1)
+        c3 = -(snr + 1 / 3) / (np.sqrt(npulses) * temp_1**1.5)
+        c4 = (snr + 0.25) / (npulses * temp_1**2.0)
+        c6 = c3 * c3 / 2
+        v_var = (thred - npulses * (1 + snr)) / omegabar
+        v_sqr = v_var**2
+        val1 = np.exp(-v_sqr / 2) / np.sqrt(2 * np.pi)
+        val2 = (
+            c3 * (v_sqr - 1)
+            + c4 * v_var * (3 - v_sqr)
+            - c6 * v_var * (v_var**4 - 10 * v_sqr + 15)
+        )
+        q = 0.5 * erfc(v_var / np.sqrt(2))
+        return q - val1 * val2
 
 
 def pd_swerling1(npulses, snr, thred):
@@ -165,34 +183,9 @@ def pd_swerling3(npulses, snr, thred):
     if npulses <= 2:
         return ko
 
-    # c_var = 1 / (1 + 0.5 * npulses * snr)
-    # sum_array = np.arange(0, npulses - 1)
-
-    # var_1 = (
-    #     thred ** (npulses - 1)
-    #     * np.exp(-thred)
-    #     * c_var
-    #     / np.exp(log_factorial(npulses - 2))
-    # )
-
-    # var_2 = np.sum(np.exp(-thred) * thred**sum_array / np.exp(log_factorial(sum_array)))
-
-    # var_3_1 = np.exp(-c_var * thred) / ((1 - c_var) ** (npulses - 2))
-    # var_3_2 = 1 - (npulses - 2) * c_var / (1 - c_var) + c_var * thred
-    # var_3_3 = 1 - np.sum(
-    #     np.exp(-(1 - c_var) * thred)
-    #     * (thred**sum_array)
-    #     * ((1 - c_var) ** sum_array)
-    #     / np.exp(log_factorial(sum_array))
-    # )
-
-    # pd = var_1 + var_2 + var_3_1 * var_3_2 * var_3_3
-
-    var_1 = (
-        thred ** (npulses - 1)
-        * np.exp(-thred)
-        / ((1 + 0.5 * npulses * snr) * np.exp(log_factorial(npulses - 2.0)))
-    )
+    var_1 = np.exp(
+        (npulses - 1) * np.log(thred) - thred - log_factorial(npulses - 2.0)
+    ) / (1 + 0.5 * npulses * snr)
 
     pd = (
         var_1
@@ -202,34 +195,6 @@ def pd_swerling3(npulses, snr, thred):
     )
 
     return pd
-
-    #     warnings.filterwarnings("ignore", category=RuntimeWarning)
-    #     temp4 = (
-    #         thred ** (npulses - 1)
-    #         * np.exp(-thred)
-    #         / (temp_1 * np.exp(log_factorial(npulses - 2.0)))
-    #     )
-    #     warnings.filterwarnings("default", category=RuntimeWarning)
-
-    #     if np.isscalar(temp4):
-    #         if np.isnan(temp4) or np.isinf(temp4):
-    #             temp4 = 0
-    #     else:
-    #         temp4[np.isnan(temp4)] = 0
-    #         temp4[np.isinf(temp4)] = 0
-
-    #     pd[it_pfa.index, :] = (
-    #         temp4
-    #         + 1
-    #         - gammainc(npulses - 1, thred)
-    #         + ko * gammainc(npulses - 1, thred / (1 + 2 / (npulses * snr)))
-    #     )
-    # if np.size(pd[it_pfa.index, :]) == 1:
-    #     if pd[it_pfa.index, :] > 1:
-    #         pd[it_pfa.index, :] = 1
-    # else:
-    #     neg_idx = np.where(pd[it_pfa.index, :] > 1)
-    #     pd[it_pfa.index, :][neg_idx[0]] = 1
 
 
 def pd_swerling4(npulses, snr, thred):
