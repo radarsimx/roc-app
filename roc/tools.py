@@ -317,22 +317,21 @@ def pd_swerling4(npulses, snr, thred):
     )
     sum_var = gamma0
     for idx_1 in range(1, npulses + 1, 1):
-        temp_sw4 = 1
+
         if idx_1 == 1:
             ai = a1
         else:
             ai = (thred / beta) * a1 / (npulses + idx_1 - 1)
         a1 = ai
         gammai = gamma0 - ai
-        gamma0 = gammai
-        a1 = ai
+        # gamma0 = gammai
+        # a1 = ai
 
-        for idx_2 in range(1, idx_1 + 1, 1):
-            temp_sw4 = temp_sw4 * int(npulses + 1 - idx_2)
+        temp_sw4 = np.sum(np.log(npulses + 1 - np.arange(1, idx_1 + 1)))
 
         try:
-            term = (snr / 2) ** idx_1 * gammai * temp_sw4 / np.exp(log_factorial(idx_1))
-        except:
+            term = (snr / 2) ** idx_1 * gammai * np.exp(temp_sw4 - log_factorial(idx_1))
+        except OverflowError:
             term = 0
 
         sum_var = sum_var + term
